@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$1" = 'redis-cluster' ]; then
+if [ "$1" = 'valkey-cluster' ]; then
     # Allow passing in cluster IP by argument or environmental variable
     IP="${2:-$IP}"
 
@@ -40,32 +40,32 @@ if [ "$1" = 'redis-cluster' ]; then
     fi
 
     for port in $(seq $INITIAL_PORT $max_port); do
-      mkdir -p /redis-conf/${port}
-      mkdir -p /redis-data/${port}
+      mkdir -p /valkey-conf/${port}
+      mkdir -p /valkey-data/${port}
 
-      if [ -e /redis-data/${port}/nodes.conf ]; then
-        rm /redis-data/${port}/nodes.conf
+      if [ -e /valkey-data/${port}/nodes.conf ]; then
+        rm /valkey-data/${port}/nodes.conf
       fi
 
-      if [ -e /redis-data/${port}/dump.rdb ]; then
-        rm /redis-data/${port}/dump.rdb
+      if [ -e /valkey-data/${port}/dump.rdb ]; then
+        rm /valkey-data/${port}/dump.rdb
       fi
 
-      if [ -e /redis-data/${port}/appendonly.aof ]; then
-        rm /redis-data/${port}/appendonly.aof
+      if [ -e /valkey-data/${port}/appendonly.aof ]; then
+        rm /valkey-data/${port}/appendonly.aof
       fi
 
       if [ "$port" -lt "$first_standalone" ]; then
-        PORT=${port} BIND_ADDRESS=${BIND_ADDRESS} envsubst < /redis-conf/redis-cluster.tmpl > /redis-conf/${port}/redis.conf
+        PORT=${port} BIND_ADDRESS=${BIND_ADDRESS} envsubst < /valkey-conf/valkey-cluster.tmpl > /valkey-conf/${port}/valkey.conf
         nodes="$nodes $IP:$port"
       else
-        PORT=${port} BIND_ADDRESS=${BIND_ADDRESS} envsubst < /redis-conf/redis.tmpl > /redis-conf/${port}/redis.conf
+        PORT=${port} BIND_ADDRESS=${BIND_ADDRESS} envsubst < /valkey-conf/valkey.tmpl > /valkey-conf/${port}/valkey.conf
       fi
 
       if [ "$port" -lt $(($INITIAL_PORT + $MASTERS)) ]; then
         if [ "$SENTINEL" = "true" ]; then
-          PORT=${port} SENTINEL_PORT=$((port - 2000)) envsubst < /redis-conf/sentinel.tmpl > /redis-conf/sentinel-${port}.conf
-          cat /redis-conf/sentinel-${port}.conf
+          PORT=${port} SENTINEL_PORT=$((port - 2000)) envsubst < /valkey-conf/sentinel.tmpl > /valkey-conf/sentinel-${port}.conf
+          cat /valkey-conf/sentinel-${port}.conf
         fi
       fi
 
@@ -77,8 +77,8 @@ if [ "$1" = 'redis-cluster' ]; then
     sleep 3
 
     #
-    ## Check the version of redis-cli and if we run on a redis server below 5.0
-    ## If it is below 5.0 then we use the redis-trib.rb to build the cluster
+    ## Check the version of valkey-cli and if we run on a valkey server below 5.0
+    ## If it is below 5.0 then we use the valkey-trib.rb to build the cluster
     #
     /redis/src/redis-cli --version | grep -E "redis-cli 3.0|redis-cli 3.2|redis-cli 4.0"
 
