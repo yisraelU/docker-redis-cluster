@@ -41,18 +41,18 @@ if [ "$1" = 'valkey-cluster' ]; then
 
     for port in $(seq $INITIAL_PORT $max_port); do
       mkdir -p /valkey-conf/${port}
-      mkdir -p /valkey-data/${port}
+      mkdir -p /data/${port}
 
-      if [ -e /valkey-data/${port}/nodes.conf ]; then
-        rm /valkey-data/${port}/nodes.conf
+      if [ -e /data/${port}/nodes.conf ]; then
+        rm /data/${port}/nodes.conf
       fi
 
-      if [ -e /valkey-data/${port}/dump.rdb ]; then
-        rm /valkey-data/${port}/dump.rdb
+      if [ -e /data/${port}/dump.rdb ]; then
+        rm /data/${port}/dump.rdb
       fi
 
-      if [ -e /valkey-data/${port}/appendonly.aof ]; then
-        rm /valkey-data/${port}/appendonly.aof
+      if [ -e /data/${port}/appendonly.aof ]; then
+        rm /data/${port}/appendonly.aof
       fi
 
       if [ "$port" -lt "$first_standalone" ]; then
@@ -62,13 +62,6 @@ if [ "$1" = 'valkey-cluster' ]; then
         PORT=${port} BIND_ADDRESS=${BIND_ADDRESS} envsubst < /valkey-conf/valkey.tmpl > /valkey-conf/${port}/valkey.conf
       fi
 
-      if [ "$port" -lt $(($INITIAL_PORT + $MASTERS)) ]; then
-        if [ "$SENTINEL" = "true" ]; then
-          PORT=${port} SENTINEL_PORT=$((port - 2000)) envsubst < /valkey-conf/sentinel.tmpl > /valkey-conf/sentinel-${port}.conf
-          cat /valkey-conf/sentinel-${port}.conf
-        fi
-      fi
-
     done
 
     bash /generate-supervisor-conf.sh $INITIAL_PORT $max_port > /etc/supervisor/supervisord.conf
@@ -76,28 +69,11 @@ if [ "$1" = 'valkey-cluster' ]; then
     supervisord -c /etc/supervisor/supervisord.conf
     sleep 3
 
-    #
-    ## Check the version of valkey-cli and if we run on a valkey server below 5.0
-    ## If it is below 5.0 then we use the valkey-trib.rb to build the cluster
-    #
-    /redis/src/redis-cli --version | grep -E "redis-cli 3.0|redis-cli 3.2|redis-cli 4.0"
 
-    if [ $? -eq 0 ]
-    then
-      echo "Using old redis-trib.rb to create the cluster"
-      echo "yes" | eval ruby /redis/src/redis-trib.rb create --replicas "$SLAVES_PER_MASTER" "$nodes"
-    else
-      echo "Using redis-cli to create the cluster"
-      echo "yes" | eval /redis/src/redis-cli --cluster create --cluster-replicas "$SLAVES_PER_MASTER" "$nodes"
-    fi
+    echo "Using valkey-cli to create the cluster"
+    eval valkey-cli --cluster create --cluster-replicas "$SLAVES_PER_MASTER" "$nodes"
 
-    if [ "$SENTINEL" = "true" ]; then
-      for port in $(seq $INITIAL_PORT $(($INITIAL_PORT + $MASTERS))); do
-        redis-sentinel /redis-conf/sentinel-${port}.conf &
-      done
-    fi
-
-    tail -f /var/log/supervisor/redis*.log
+    tail -f /var/log/supervisor/valkey*.log
 else
   exec "$@"
 fi

@@ -20,7 +20,7 @@ rebuild:
 	docker-compose build --no-cache
 
 bash:
-	docker-compose exec redis-cluster /bin/bash
+	docker-compose exec valkey-cluster /bin/bash
 
 cli:
-	docker-compose exec redis-cluster /redis/src/redis-cli -p 7000
+	docker-compose exec valkey-cluster valkey-cli -p 7000
