@@ -1,6 +1,6 @@
 version: '2'
 services:
-  redis-cluster:
+  valkey-cluster:
     environment:
      IP: ${REDIS_CLUSTER_IP}
      SENTINEL: ${REDIS_USE_SENTINEL}
@@ -8,7 +8,7 @@ services:
     build:
       context: .
       args:
-        redis_version: '7.2.5'
+        valkey_version: '7.2.6'
     hostname: server
     ports:
       - '7000-7050:7000-7050'
