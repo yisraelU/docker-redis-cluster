@@ -71,7 +71,7 @@ if [ "$1" = 'valkey-cluster' ]; then
 
 
     echo "Using valkey-cli to create the cluster"
-    eval valkey-cli --cluster create --cluster-replicas "$SLAVES_PER_MASTER" "$nodes"
+    echo "yes" | eval valkey-cli --cluster create --cluster-replicas "$SLAVES_PER_MASTER" "$nodes"
 
     tail -f /var/log/supervisor/valkey*.log
 else
