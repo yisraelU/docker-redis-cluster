@@ -1,4 +1,4 @@
-FROM valkey/valkey:7.2.6
+FROM valkey/valkey:8
 
 RUN set -eux; \
 	valkey-cli --version; \
