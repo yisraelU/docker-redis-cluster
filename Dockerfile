@@ -1,5 +1,4 @@
-# Build based on redis:7.2.5 from "2024-05-22T23:17:59Z"
-FROM redis@sha256:e422889e156ebea83856b6ff973bfe0c86bce867d80def228044eeecf925592b
+FROM redis:8.0.1
 
 LABEL maintainer="Johan Andersson <Grokzen@gmail.com>"
 
@@ -12,6 +11,9 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -yqq \
       net-tools supervisor ruby rubygems locales gettext-base wget gcc make g++ build-essential libc6-dev tcl && \
     apt-get clean -yqq
+
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
 # # Ensure UTF-8 lang and locale
 RUN locale-gen en_US.UTF-8
