@@ -1,13 +1,12 @@
 services:
   valkey-cluster:
     environment:
-     IP: ${REDIS_CLUSTER_IP}
-     STANDALONE: ${REDIS_USE_STANDALONE}
+      IP: ${VALKEY_CLUSTER_IP:-}
+      STANDALONE: ${VALKEY_USE_STANDALONE:-}
     build:
       context: .
       args:
-        valkey_version: '8'
-        platform: 'linux/amd64'
+        VALKEY_VERSION: ${VALKEY_VERSION:-8}
     hostname: server
     ports:
       - '7000-7050:7000-7050'
