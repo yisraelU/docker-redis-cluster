@@ -1,4 +1,4 @@
-ARG VALKEY_VERSION=8
+ARG VALKEY_VERSION
 FROM valkey/valkey:${VALKEY_VERSION}
 
 RUN set -eux; \

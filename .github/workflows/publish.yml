@@ -8,7 +8,6 @@ on:
       valkey_version:
         description: "Valkey base image version (e.g. 8, 8.0.1, 7.2)"
         required: true
-        default: "8"
       image_tag:
         description: "Docker Hub tag to publish (e.g. 8.0.1, latest)"
         required: true

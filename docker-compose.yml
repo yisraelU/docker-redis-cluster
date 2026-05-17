@@ -6,7 +6,7 @@ services:
     build:
       context: .
       args:
-        VALKEY_VERSION: ${VALKEY_VERSION:-8}
+        VALKEY_VERSION: ${VALKEY_VERSION:?Set VALKEY_VERSION}
     hostname: server
     ports:
       - '7000-7050:7000-7050'
