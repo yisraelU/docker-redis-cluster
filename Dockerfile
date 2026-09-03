@@ -1,4 +1,9 @@
-FROM redis:8.0.1
+# Must be declared before FROM to be usable there; redeclared (no default) after FROM to stay
+# usable in the build stage below, where it also drives which source tarball gets compiled -
+# keeping the base image and the compiled redis-server/redis-cli binaries on the same version.
+ARG redis_version=8.10.1
+
+FROM redis:${redis_version}
 
 LABEL maintainer="Johan Andersson <Grokzen@gmail.com>"
 
@@ -25,8 +30,7 @@ ENV SSL_CERT_FILE=/usr/local/etc/openssl/cert.pem
 
 RUN gem install redis -v 4.1.3
 
-# This will always build the latest release/commit in the 7.2 branch
-ARG redis_version=7.2
+ARG redis_version
 
 RUN wget -qO redis.tar.gz https://github.com/redis/redis/tarball/${redis_version} \
     && tar xfz redis.tar.gz -C / \

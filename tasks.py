@@ -5,7 +5,11 @@ from multiprocessing import Pool
 from invoke import task
 
 
-latest_version_string = "8.0.1"
+latest_version_string = "8.10.1"
+
+DOCKERHUB_NAMESPACE = "yisraelu"
+
+DEFAULT_PLATFORMS = "linux/amd64,linux/arm64"
 
 # Unpublished versions
 version_config_mapping = []
@@ -19,7 +23,10 @@ version_config_mapping += [f"6.0.{i}" for i in range(0, 21)]
 version_config_mapping += [f"6.2.{i}" for i in range(0, 15)]
 version_config_mapping += [f"7.0.{i}" for i in range(0, 16)]
 version_config_mapping += [f"7.2.{i}" for i in range(0, 6)]
-version_config_mapping += ["7.4-rc1"]
+version_config_mapping += ["8.0.1"]
+version_config_mapping += [f"8.2.{i}" for i in range(6, 10)]
+version_config_mapping += ["8.4"]
+version_config_mapping += ["8.10", "8.10.0", "8.10.1"]
 
 
 def version_name_to_version(version):
@@ -64,27 +71,40 @@ def _docker_pull(config):
     """
     c, version = config
     print(f" -- Starting docker pull for version : {version}")
-    pull_command = f"docker pull grokzen/redis-cluster:{version}"
+    pull_command = f"docker pull {DOCKERHUB_NAMESPACE}/redis-cluster:{version}"
     c.run(pull_command)
 
 
 def _docker_build(config):
     """
-    Internal multiprocess method to run docker build command
+    Internal multiprocess method to run a multi-platform docker buildx build+push.
+
+    Multi-arch manifests can't be produced with a plain `docker build` (and can't be
+    `--load`ed locally either) - `--push` is required to publish the manifest list,
+    so build and push happen together here rather than as separate steps.
     """
-    c, version = config
-    print(f" -- Starting docker build for version : {version}")
-    build_command = f"docker build --build-arg redis_version={version} -t grokzen/redis-cluster:{version} ."
+    c, version, platforms = config
+    print(f" -- Starting docker buildx build+push for version : {version} ({platforms})")
+    build_command = (
+        f"docker buildx build --platform {platforms} "
+        f"--build-arg redis_version={version} "
+        f"-t {DOCKERHUB_NAMESPACE}/redis-cluster:{version} "
+        f"--push ."
+    )
     c.run(build_command)
 
 
 def _docker_push(config):
     """
-    Internal multiprocess method to run docker push command
+    Internal multiprocess method to run docker push command.
+
+    Only valid for a single-arch image already built and tagged locally - multi-arch
+    images are pushed as part of `build` (see `_docker_build`) since buildx requires
+    `--push` at build time to publish a manifest list.
     """
     c, version = config
     print(f" -- Starting docker push for version : {version}")
-    build_command = f"docker push grokzen/redis-cluster:{version}"
+    build_command = f"docker push {DOCKERHUB_NAMESPACE}/redis-cluster:{version}"
     c.run(build_command)
 
 
@@ -103,14 +123,14 @@ def pull(c, version, cpu=None):
 
 
 @task
-def build(c, version, cpu=None):
-    print(f" -- Docker building version : {version}")
+def build(c, version, cpu=None, platforms=DEFAULT_PLATFORMS):
+    print(f" -- Docker building (and pushing, for multi-arch) version : {version}")
 
     pool = Pool(get_pool_size(cpu))
     pool.map(
         _docker_build,
         [
-            [c, version]
+            [c, version, platforms]
             for version in version_name_to_version(version)
         ],
     )
